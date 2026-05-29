@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { Bell, Menu, Search, Store, UserRound } from '@lucide/vue'
+import { Bell, LogOut, Menu, Search, Store, UserRound } from '@lucide/vue'
+
+const auth = useAuthStore()
+
+async function handleLogout() {
+  await auth.logout()
+  await navigateTo('/login')
+}
 </script>
 
 <template>
@@ -20,8 +27,8 @@ import { Bell, Menu, Search, Store, UserRound } from '@lucide/vue'
       </div>
 
       <div class="rounded-lg border border-white/10 bg-white/6 p-3">
-        <p class="text-sm font-medium">Tienda demo</p>
-        <p class="mt-1 text-xs text-sidebar-muted">Ambiente de diseno visual</p>
+        <p class="truncate text-sm font-medium">{{ auth.storeName }}</p>
+        <p class="mt-1 text-xs text-sidebar-muted">Sesion protegida</p>
       </div>
     </aside>
 
@@ -33,7 +40,7 @@ import { Bell, Menu, Search, Store, UserRound } from '@lucide/vue'
           </UiButton>
 
           <div class="hidden min-w-0 sm:block">
-            <p class="truncate text-sm font-medium">Tienda demo, S.A. de C.V.</p>
+            <p class="truncate text-sm font-medium">{{ auth.storeName }}</p>
             <p class="truncate text-xs text-muted-foreground">Vista de negocio</p>
           </div>
 
@@ -51,10 +58,14 @@ import { Bell, Menu, Search, Store, UserRound } from '@lucide/vue'
               <UserRound class="size-4" aria-hidden="true" />
             </div>
             <div>
-              <p class="text-sm font-medium leading-4">Administrador</p>
+              <p class="max-w-36 truncate text-sm font-medium leading-4">{{ auth.displayName }}</p>
               <p class="text-xs text-muted-foreground">En linea</p>
             </div>
           </div>
+
+          <UiButton variant="ghost" size="icon" aria-label="Cerrar sesion" @click="handleLogout">
+            <LogOut class="size-4" aria-hidden="true" />
+          </UiButton>
         </div>
       </header>
 

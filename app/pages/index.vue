@@ -67,6 +67,7 @@ const activity = [
 ]
 
 const chartBars = [18, 22, 31, 28, 42, 48, 65, 58, 73, 69, 88, 76, 91]
+const auth = useAuthStore()
 </script>
 
 <template>
@@ -74,7 +75,7 @@ const chartBars = [18, 22, 31, 28, 42, 48, 65, 58, 73, 69, 88, 76, 91]
     <section class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground">Resumen general</p>
-        <h1 class="mt-1 text-3xl font-semibold tracking-normal text-foreground">Bienvenido, Administrador</h1>
+        <h1 class="mt-1 text-3xl font-semibold tracking-normal text-foreground">Bienvenido, {{ auth.displayName }}</h1>
       </div>
       <div class="flex flex-wrap gap-2">
         <UiBadge variant="success">En linea</UiBadge>
