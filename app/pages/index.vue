@@ -21,6 +21,20 @@ const realtime = useDashboardRealtime()
 const metricIcons = [TrendingUp, ChartNoAxesCombined, ReceiptText, PackageSearch]
 
 const maxHourly = computed(() => Math.max(...dashboard.hourlySales, 1))
+const paymentColors = ['var(--success)', 'var(--primary)', 'var(--warning)', 'var(--destructive)', '#64748b']
+const paymentGradient = computed(() => {
+  if (!dashboard.paymentMethods.length) return ''
+
+  let cursor = 0
+  const stops = dashboard.paymentMethods.map((method, index) => {
+    const start = cursor
+    cursor += method.percent
+
+    return `${paymentColors[index % paymentColors.length]} ${start}% ${cursor}%`
+  })
+
+  return `conic-gradient(${stops.join(', ')})`
+})
 const lastUpdated = computed(() => {
   if (!dashboard.lastUpdated) return 'Sin actualizar'
 
@@ -70,7 +84,7 @@ onMounted(async () => {
       />
     </section>
 
-    <section class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
+    <section class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.75fr)_minmax(280px,0.7fr)]">
       <UiCard class="p-5">
         <div class="flex items-center justify-between gap-4">
           <div>
@@ -99,17 +113,51 @@ onMounted(async () => {
       </UiCard>
 
       <UiCard class="p-5">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-semibold">Top productos</h2>
+            <p class="mt-1 text-sm text-muted-foreground">Mas vendidos del dia</p>
+          </div>
+          <PackageSearch class="size-5 text-muted-foreground" aria-hidden="true" />
+        </div>
+
+        <div v-if="dashboard.topProducts.length" class="mt-5 space-y-3">
+          <div
+            v-for="(product, index) in dashboard.topProducts"
+            :key="product.id"
+            class="flex items-center gap-3 rounded-md border bg-background p-3"
+          >
+            <div class="grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-sm font-semibold text-primary">
+              {{ index + 1 }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium">{{ product.name }}</p>
+              <p class="text-xs text-muted-foreground">{{ product.quantity }} unidades</p>
+            </div>
+            <p class="text-sm font-semibold">{{ money(product.total) }}</p>
+          </div>
+        </div>
+
+        <div v-else class="mt-6 grid h-56 place-items-center text-center text-sm text-muted-foreground">
+          Los productos mas vendidos apareceran cuando existan ventas.
+        </div>
+      </UiCard>
+
+      <UiCard class="p-5">
         <div class="flex items-center justify-between">
           <h2 class="text-base font-semibold">Metodos de pago</h2>
           <CreditCard class="size-5 text-muted-foreground" aria-hidden="true" />
         </div>
         <div v-if="dashboard.paymentMethods.length" class="mt-6 grid gap-4 sm:grid-cols-[150px_1fr] xl:grid-cols-1">
-          <div class="mx-auto grid size-36 place-items-center rounded-full bg-[conic-gradient(var(--success)_0_48%,var(--primary)_48%_76%,var(--warning)_76%_100%)]">
+          <div class="mx-auto grid size-36 place-items-center rounded-full" :style="{ background: paymentGradient }">
             <div class="size-20 rounded-full bg-card" />
           </div>
           <div class="space-y-3">
-            <div v-for="method in dashboard.paymentMethods" :key="method.method" class="flex items-center justify-between text-sm">
-              <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-primary" />{{ method.method }}</span>
+            <div v-for="(method, index) in dashboard.paymentMethods" :key="method.method" class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="size-2 rounded-full" :style="{ background: paymentColors[index % paymentColors.length] }" />
+                {{ method.method }}
+              </span>
               <span class="font-medium">{{ method.percent }}%</span>
             </div>
           </div>
