@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/tailwind.css'],
   runtimeConfig: {
     apiBase: process.env.NUXT_API_BASE ?? process.env.NUXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:3000/api/v1',
+    cableUrl: process.env.NUXT_CABLE_URL ?? process.env.NUXT_PUBLIC_CABLE_URL ?? 'ws://127.0.0.1:3000/cable',
   },
   shadcn: {
     prefix: '',

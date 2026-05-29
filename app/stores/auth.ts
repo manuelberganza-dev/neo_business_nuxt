@@ -33,7 +33,9 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
 
     try {
-      const response = await $fetch('/api/auth/me')
+      const response = await $fetch('/api/auth/me', {
+        headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
+      })
 
       user.value = normalizeCurrentUser(response)
       initialized.value = true
@@ -70,6 +72,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    const businessContext = useBusinessContextStore()
+    const notifications = useNotificationsStore()
+
     try {
       await $fetch('/api/auth/logout', {
         method: 'DELETE',
@@ -79,6 +84,8 @@ export const useAuthStore = defineStore('auth', () => {
       // La sesion local siempre se limpia aunque el token ya haya expirado en Rails.
     }
 
+    businessContext.reset()
+    notifications.reset()
     clearSession()
   }
 
