@@ -20,7 +20,7 @@ const realtime = useDashboardRealtime()
 
 const metricIcons = [TrendingUp, ChartNoAxesCombined, ReceiptText, PackageSearch]
 
-const maxHourly = computed(() => Math.max(...dashboard.hourlySales, 1))
+const maxHourly = computed(() => Math.max(...dashboard.hourlySales.map((item) => item.total), 1))
 const paymentColors = ['var(--success)', 'var(--primary)', 'var(--warning)', 'var(--destructive)', '#64748b']
 const paymentGradient = computed(() => {
   if (!dashboard.paymentMethods.length) return ''
@@ -98,13 +98,19 @@ onMounted(async () => {
         </div>
 
         <div class="mt-6 h-72 rounded-md border bg-background p-4">
-          <div v-if="dashboard.hourlySales.some((value) => value > 0)" class="flex h-full items-end gap-2">
+          <div v-if="dashboard.hourlySales.some((value) => value.total > 0)" class="flex h-full items-end gap-2">
             <div
-              v-for="(amount, index) in dashboard.hourlySales"
-              :key="index"
-              class="flex-1 rounded-t-md bg-primary/85"
-              :style="{ height: `${Math.max(4, (amount / maxHourly) * 100)}%` }"
-            />
+              v-for="hour in dashboard.hourlySales"
+              :key="hour.label"
+              class="group flex min-w-0 flex-1 flex-col items-center justify-end gap-2"
+              :title="`${hour.label}: ${money(hour.total)} (${hour.salesCount} ventas)`"
+            >
+              <div
+                class="w-full rounded-t-md bg-primary/85"
+                :style="{ height: `${Math.max(4, (hour.total / maxHourly) * 100)}%` }"
+              />
+              <span class="hidden max-w-full truncate text-[10px] text-muted-foreground sm:block">{{ hour.label }}</span>
+            </div>
           </div>
           <div v-else class="grid h-full place-items-center text-center text-sm text-muted-foreground">
             Aun no hay ventas para graficar.

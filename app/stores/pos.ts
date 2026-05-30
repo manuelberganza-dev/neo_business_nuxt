@@ -40,6 +40,18 @@ export type FiscalCustomerDraft = {
   email: string
 }
 
+export type SaleFilters = {
+  status?: string
+  from?: string
+  to?: string
+  sale_number?: string
+  customer_id?: number | string
+  cash_session_id?: number | string
+  branch_id?: number | string
+  cashier_id?: number | string
+  limit?: number
+}
+
 const sessionStorageKey = 'neo_pos_cash_session'
 const registerStorageKey = 'neo_pos_cash_register_id'
 
@@ -222,8 +234,13 @@ export const usePosStore = defineStore('pos', () => {
     }
   }
 
-  async function refreshSales() {
-    const response = await api.get<unknown>('/sales', { query: { limit: 20 } })
+  async function refreshSales(filters: SaleFilters = {}) {
+    const query: Record<string, string | number> = { limit: filters.limit ?? 20 }
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') query[key] = value
+    })
+
+    const response = await api.get<unknown>('/sales', { query })
     sales.value = unwrapSales(response)
   }
 

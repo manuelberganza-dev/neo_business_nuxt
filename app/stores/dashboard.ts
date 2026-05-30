@@ -2,6 +2,7 @@ import { acceptHMRUpdate, defineStore } from 'pinia'
 import type {
   ActivityItem,
   DashboardRealtimeEvent,
+  HourlySale,
   LatestSale,
   LowStockProduct,
   PaymentSlice,
@@ -88,24 +89,45 @@ function normalizeSale(value: unknown): LatestSale | null {
   }
 }
 
-function paymentSlicesFromSales(sales: LatestSale[]) {
-  const totals = new Map<string, number>()
-  const grandTotal = sales.reduce((sum, sale) => {
-    totals.set(sale.method, (totals.get(sale.method) ?? 0) + sale.total)
+function normalizePayment(value: unknown): Omit<PaymentSlice, 'percent'> | null {
+  if (!isRecord(value)) return null
+  const method = String(value.method ?? value.payment_method ?? 'No definido')
 
-    return sum + sale.total
-  }, 0)
-
-  return Array.from(totals.entries()).map(([method, total]) => ({
+  return {
     method,
-    total,
-    percent: grandTotal > 0 ? Math.round((total / grandTotal) * 1000) / 10 : 0,
+    total: numeric(value.amount ?? value.total),
+    paymentsCount: numeric(value.payments_count ?? value.count),
+  }
+}
+
+function normalizeHourly(value: unknown): HourlySale | null {
+  if (!isRecord(value)) return null
+  const rawHour = String(value.hour ?? value.label ?? '')
+  const date = rawHour ? new Date(rawHour.replace(' ', 'T')) : null
+  const label = date && !Number.isNaN(date.getTime())
+    ? new Intl.DateTimeFormat('es-SV', { hour: '2-digit', minute: '2-digit' }).format(date)
+    : rawHour || 'Hora'
+
+  return {
+    label,
+    total: numeric(value.total ?? value.amount),
+    salesCount: numeric(value.sales_count ?? value.count),
+  }
+}
+
+function withPaymentPercents(payments: Array<Omit<PaymentSlice, 'percent'>>) {
+  const grandTotal = payments.reduce((sum, item) => sum + item.total, 0)
+
+  return payments.map((item) => ({
+    ...item,
+    percent: grandTotal > 0 ? Math.round((item.total / grandTotal) * 1000) / 10 : 0,
   }))
 }
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const api = useApi()
   const notifications = useNotificationsStore()
+  const context = useBusinessContextStore()
 
   const loading = ref(false)
   const error = ref('')
@@ -117,7 +139,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const latestSales = ref<LatestSale[]>([])
   const paymentMethods = ref<PaymentSlice[]>([])
   const activity = ref<ActivityItem[]>([])
-  const hourlySales = ref<number[]>(Array.from({ length: 12 }, () => 0))
+  const hourlySales = ref<HourlySale[]>([])
 
   const metrics = computed(() => [
     {
@@ -155,14 +177,42 @@ export const useDashboardStore = defineStore('dashboard', () => {
     activity.value = activity.value.slice(0, 8)
   }
 
-  function normalizeHourlySales() {
-    const values = Array.from({ length: 12 }, () => 0)
+  function reportQuery() {
+    const query: Record<string, number> = {}
+    if (context.selectedBranchId) query.branch_id = context.selectedBranchId
+    if (context.selectedWarehouseId) query.warehouse_id = context.selectedWarehouseId
 
-    latestSales.value.forEach((sale, index) => {
-      values[index % values.length] += sale.total
-    })
+    return query
+  }
 
-    hourlySales.value = values
+  function applySaleToPaymentMethods(method: string, total: number) {
+    const existing = paymentMethods.value.find((item) => item.method === method)
+
+    const base = paymentMethods.value.map((item) => ({
+      method: item.method,
+      total: item.method === method ? item.total + total : item.total,
+      paymentsCount: item.method === method ? (item.paymentsCount ?? 0) + 1 : item.paymentsCount,
+    }))
+
+    if (!existing) {
+      base.push({ method, total, paymentsCount: 1 })
+    }
+
+    paymentMethods.value = withPaymentPercents(base)
+  }
+
+  function applySaleToCurrentHour(total: number) {
+    const label = new Intl.DateTimeFormat('es-SV', { hour: '2-digit', minute: '2-digit' }).format(new Date())
+    const existing = hourlySales.value.find((item) => item.label === label)
+
+    if (existing) {
+      existing.total += total
+      existing.salesCount += 1
+      return
+    }
+
+    hourlySales.value.push({ label, total, salesCount: 1 })
+    hourlySales.value = hourlySales.value.slice(-12)
   }
 
   async function load() {
@@ -170,12 +220,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
     error.value = ''
 
     try {
-      const [daily, margin, top, lowStock, sales] = await Promise.all([
-        api.get('/reports/daily_sales'),
-        api.get('/reports/gross_margin'),
-        api.get('/reports/top_products'),
-        api.get('/reports/low_stock'),
-        api.get('/sales'),
+      if (!context.loaded) await context.loadContext()
+      const query = reportQuery()
+
+      const [daily, margin, top, lowStock, hourly, payments, sales] = await Promise.all([
+        api.get('/reports/daily_sales', { query }),
+        api.get('/reports/gross_margin', { query }),
+        api.get('/reports/top_products', { query }),
+        api.get('/reports/low_stock', { query }),
+        api.get('/reports/sales_by_hour', { query }),
+        api.get('/reports/payment_methods', { query }),
+        api.get('/sales', { query: { ...query, limit: 6 } }),
       ])
 
       dailySales.value = {
@@ -202,8 +257,22 @@ export const useDashboardStore = defineStore('dashboard', () => {
         .map(normalizeSale)
         .filter((item): item is LatestSale => Boolean(item))
         .slice(0, 6)
-      paymentMethods.value = paymentSlicesFromSales(latestSales.value)
-      normalizeHourlySales()
+      hourlySales.value = unwrapCollection<unknown>(hourly, 'hours')
+        .map(normalizeHourly)
+        .filter((item): item is HourlySale => Boolean(item))
+      paymentMethods.value = withPaymentPercents(
+        unwrapCollection<unknown>(payments, 'payment_methods')
+          .map(normalizePayment)
+          .filter((item): item is Omit<PaymentSlice, 'percent'> => Boolean(item)),
+      )
+
+      if (paymentMethods.value.length === 0 && isRecord(daily)) {
+        paymentMethods.value = withPaymentPercents(
+          unwrapCollection<unknown>(daily, 'payment_summary')
+            .map(normalizePayment)
+            .filter((item): item is Omit<PaymentSlice, 'percent'> => Boolean(item)),
+        )
+      }
 
       if (activity.value.length === 0) {
         addActivity({
@@ -249,8 +318,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
         method: String(payload.payment_method ?? 'No definido'),
       })
       latestSales.value = latestSales.value.slice(0, 6)
-      paymentMethods.value = paymentSlicesFromSales(latestSales.value)
-      normalizeHourlySales()
+      applySaleToPaymentMethods(String(payload.payment_method ?? 'No definido'), numeric(payload.total))
+      applySaleToCurrentHour(numeric(payload.total))
       addActivity({
         title: 'Venta registrada',
         description: `${money(numeric(payload.total))} agregado a ventas del dia.`,

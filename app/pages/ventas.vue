@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, RefreshCw, ShoppingCart } from '@lucide/vue'
+import { FileText, RefreshCw, Search, ShoppingCart } from '@lucide/vue'
 import type { SaleSummary } from '~/types/pos'
 
 definePageMeta({
@@ -9,8 +9,16 @@ definePageMeta({
 
 const pos = usePosStore()
 const { can } = usePermissions()
+const context = useBusinessContextStore()
 const voidSaleId = ref<number | null>(null)
 const voidReason = ref('')
+const filters = reactive({
+  status: '',
+  from: '',
+  to: '',
+  sale_number: '',
+  cash_session_id: '',
+})
 
 function money(value: number) {
   return new Intl.NumberFormat('es-SV', { style: 'currency', currency: 'USD' }).format(value)
@@ -46,8 +54,21 @@ async function submitVoid(sale: SaleSummary) {
   }
 }
 
+async function refreshSales() {
+  await pos.refreshSales({
+    status: filters.status,
+    from: filters.from,
+    to: filters.to,
+    sale_number: filters.sale_number,
+    cash_session_id: filters.cash_session_id,
+    branch_id: context.selectedBranchId ?? '',
+    limit: 50,
+  })
+}
+
 onMounted(async () => {
-  if (!pos.sales.length) await pos.refreshSales()
+  if (!context.loaded) await context.loadContext()
+  await refreshSales()
 })
 </script>
 
@@ -69,7 +90,7 @@ onMounted(async () => {
         </p>
       </div>
       <div class="flex gap-2">
-        <UiButton variant="outline" :disabled="pos.loading" @click="pos.refreshSales">
+        <UiButton variant="outline" :disabled="pos.loading" @click="refreshSales">
           <RefreshCw class="size-4" aria-hidden="true" />
           Actualizar
         </UiButton>
@@ -81,6 +102,24 @@ onMounted(async () => {
         </NuxtLink>
       </div>
     </div>
+
+    <UiCard class="p-4">
+      <form class="grid gap-3 md:grid-cols-[1fr_150px_150px_150px_150px_auto]" @submit.prevent="refreshSales">
+        <UiInput v-model="filters.sale_number" placeholder="Numero de venta" />
+        <select v-model="filters.status" class="h-10 rounded-md border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Estado">
+          <option value="">Todos</option>
+          <option value="paid">Pagadas</option>
+          <option value="voided">Anuladas</option>
+        </select>
+        <UiInput v-model="filters.from" type="date" aria-label="Desde" />
+        <UiInput v-model="filters.to" type="date" aria-label="Hasta" />
+        <UiInput v-model="filters.cash_session_id" type="number" placeholder="Sesion caja" />
+        <UiButton type="submit" :disabled="pos.loading">
+          <Search class="size-4" aria-hidden="true" />
+          Buscar
+        </UiButton>
+      </form>
+    </UiCard>
 
     <div v-if="pos.error" class="rounded-md border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
       {{ pos.error }}

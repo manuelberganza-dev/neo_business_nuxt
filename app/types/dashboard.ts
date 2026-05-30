@@ -33,6 +33,13 @@ export type PaymentSlice = {
   method: string
   total: number
   percent: number
+  paymentsCount?: number
+}
+
+export type HourlySale = {
+  label: string
+  total: number
+  salesCount: number
 }
 
 export type ActivityItem = {

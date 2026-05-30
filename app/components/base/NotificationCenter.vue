@@ -62,6 +62,10 @@ watch(online, (value) => {
           :key="item.id"
           class="flex gap-3 rounded-md px-3 py-3"
           :class="item.read ? 'opacity-72' : 'bg-muted/70'"
+          role="button"
+          tabindex="0"
+          @click="notifications.markRead(item.id)"
+          @keyup.enter="notifications.markRead(item.id)"
         >
           <component :is="toneIcon[item.tone]" class="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
           <div class="min-w-0">

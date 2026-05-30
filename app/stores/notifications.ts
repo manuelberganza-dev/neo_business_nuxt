@@ -1,15 +1,49 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
-import { unwrapCollection } from '~/types/business'
+import { isRecord, unwrapCollection } from '~/types/business'
 
 export type NotificationTone = 'default' | 'success' | 'warning' | 'danger'
 
 export type ShellNotification = {
   id: string
+  event?: string
   title: string
   description: string
   tone: NotificationTone
   read: boolean
   createdAt: string
+  metadata?: Record<string, unknown>
+}
+
+function toneFromEvent(event: string): NotificationTone {
+  if (event.includes('low_stock') || event.includes('alert')) return 'warning'
+  if (event.includes('void') || event.includes('failed') || event.includes('error')) return 'danger'
+  if (event.includes('received') || event.includes('finished') || event.includes('created')) return 'success'
+
+  return 'default'
+}
+
+function normalizeNotification(value: unknown): ShellNotification | null {
+  if (!isRecord(value)) return null
+  const id = value.id
+  const event = typeof value.event === 'string' ? value.event : 'system_alert'
+  const title = typeof value.title === 'string' ? value.title : event.replaceAll('_', ' ')
+
+  if (typeof id !== 'number' && typeof id !== 'string') return null
+
+  return {
+    id: String(id),
+    event,
+    title,
+    description: typeof value.description === 'string'
+      ? value.description
+      : typeof value.message === 'string'
+        ? value.message
+        : 'Notificacion operativa del negocio.',
+    tone: toneFromEvent(event),
+    read: Boolean(value.read),
+    createdAt: typeof value.created_at === 'string' ? value.created_at : new Date().toISOString(),
+    metadata: isRecord(value.metadata) ? value.metadata : undefined,
+  }
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
@@ -33,8 +67,28 @@ export const useNotificationsStore = defineStore('notifications', () => {
     })
   }
 
-  function markAllRead() {
+  async function markAllRead() {
     items.value = items.value.map((item) => ({ ...item, read: true }))
+
+    if (!auth.isAuthenticated) return
+
+    try {
+      await api.patch('/notifications/read_all', undefined, { query: { unread: true } })
+    }
+    catch {
+      // La marca local evita ruido visual aunque el backend no este disponible.
+    }
+  }
+
+  async function markRead(id: string) {
+    items.value = items.value.map((item) => item.id === id ? { ...item, read: true } : item)
+
+    try {
+      await api.patch(`/notifications/${id}/read`)
+    }
+    catch {
+      // La accion local se conserva para no bloquear la UI por conectividad.
+    }
   }
 
   async function refresh() {
@@ -43,6 +97,16 @@ export const useNotificationsStore = defineStore('notifications', () => {
     loading.value = true
 
     try {
+      const response = await api.get('/notifications', { query: { limit: 20 } })
+      const persistent = unwrapCollection<unknown>(response, 'notifications')
+        .map(normalizeNotification)
+        .filter((item): item is ShellNotification => Boolean(item))
+
+      if (persistent.length > 0) {
+        items.value = persistent
+        return
+      }
+
       if (items.value.length === 0) {
         add({
           title: 'Sesion activa',
@@ -86,6 +150,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     unreadCount,
     add,
     markAllRead,
+    markRead,
     refresh,
     reset,
   }
