@@ -199,8 +199,8 @@ onMounted(async () => {
       {{ pos.success }}
     </div>
 
-    <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
-      <div class="space-y-4">
+    <div class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
+      <div class="min-w-0 space-y-4">
         <UiCard class="p-4">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="min-w-0">
@@ -379,7 +379,7 @@ onMounted(async () => {
         </UiCard>
       </div>
 
-      <aside class="space-y-4">
+      <aside class="min-w-0 space-y-4">
         <UiCard class="p-4">
           <div class="flex items-center gap-2">
             <UserRound class="size-4 text-muted-foreground" aria-hidden="true" />
