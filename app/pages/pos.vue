@@ -49,6 +49,12 @@ const filteredProducts = computed(() => {
 const branchLabel = computed(() => context.selectedBranch?.name ?? 'Sucursal actual')
 const warehouseLabel = computed(() => context.selectedWarehouse?.name ?? 'Bodega actual')
 const activeSessionLabel = computed(() => pos.activeSession ? `Sesion #${pos.activeSession.id}` : 'Caja cerrada')
+const cashRegisterLabel = computed(() => {
+  const register = pos.selectedCashRegister
+  if (!register) return pos.cashRegisterId ? `Caja ID ${pos.cashRegisterId}` : 'Caja sin seleccionar'
+
+  return `${register.code} - ${register.name}`
+})
 const idempotencyLabel = computed(() => pos.currentIdempotencyKey.slice(0, 18))
 
 function money(value: number) {
@@ -109,6 +115,11 @@ async function closeCashSession() {
   catch {
     // El store muestra el detalle que Rails devuelve.
   }
+}
+
+async function selectCashRegister(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  await pos.selectCashRegister(value ? Number(value) : '')
 }
 
 async function checkout() {
@@ -197,17 +208,34 @@ onMounted(async () => {
                 <UiBadge :variant="pos.activeSession ? 'success' : 'warning'">
                   {{ activeSessionLabel }}
                 </UiBadge>
-                <UiBadge variant="muted">Caja ID {{ pos.cashRegisterId || 'sin definir' }}</UiBadge>
+                <UiBadge variant="muted">{{ cashRegisterLabel }}</UiBadge>
               </div>
               <p class="mt-2 text-sm text-muted-foreground">
-                Rails aun no expone listado de cajas; usa el ID de caja asignado al negocio.
+                Selecciona una caja de la sucursal. El POS recupera la sesion abierta actual desde Rails.
               </p>
+              <div v-if="pos.activeSession" class="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                <span>Fondo: {{ money(pos.activeSession.openingAmount) }}</span>
+                <span>Esperado: {{ money(pos.activeSession.expectedAmount ?? pos.activeSession.openingAmount) }}</span>
+                <span>{{ dateTime(pos.activeSession.openedAt) }}</span>
+              </div>
             </div>
 
-            <form v-if="!pos.activeSession" class="grid gap-2 sm:grid-cols-[110px_130px_auto]" @submit.prevent="openCashSession">
-              <UiInput v-model="pos.cashRegisterId" type="number" aria-label="ID de caja" placeholder="Caja ID" />
+            <form v-if="!pos.activeSession" class="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_130px_auto]" @submit.prevent="openCashSession">
+              <select
+                v-if="pos.availableCashRegisters.length"
+                :value="pos.cashRegisterId"
+                class="h-10 rounded-md border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Caja"
+                @change="selectCashRegister"
+              >
+                <option value="">Seleccionar caja</option>
+                <option v-for="register in pos.availableCashRegisters" :key="register.id" :value="register.id">
+                  {{ register.code }} - {{ register.name }} ({{ register.status }})
+                </option>
+              </select>
+              <UiInput v-else v-model="pos.cashRegisterId" type="number" aria-label="ID de caja" placeholder="Caja ID" />
               <UiInput v-model="openingAmount" type="number" aria-label="Fondo inicial" placeholder="Fondo" />
-              <UiButton type="submit" :disabled="pos.saving">
+              <UiButton type="submit" :disabled="pos.saving || !pos.cashRegisterId">
                 <Banknote class="size-4" aria-hidden="true" />
                 Abrir caja
               </UiButton>
@@ -220,6 +248,12 @@ onMounted(async () => {
                 Cerrar caja
               </UiButton>
             </form>
+          </div>
+          <div v-if="pos.activeSession?.paymentSummary.length" class="mt-4 grid gap-2 border-t pt-4 sm:grid-cols-3">
+            <div v-for="payment in pos.activeSession.paymentSummary" :key="payment.method" class="rounded-md bg-muted/35 px-3 py-2 text-sm">
+              <p class="font-medium">{{ payment.method }}</p>
+              <p class="text-muted-foreground">{{ money(payment.amount) }} · {{ numberValue(payment.paymentsCount) }} pagos</p>
+            </div>
           </div>
         </UiCard>
 

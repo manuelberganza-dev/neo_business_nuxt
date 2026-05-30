@@ -1,9 +1,10 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { isRecord } from '~/types/business'
-import type { CashSession, PaymentMethodOption, PosCustomer, PosProduct, SaleSummary } from '~/types/pos'
+import type { CashRegister, CashSession, PaymentMethodOption, PosCustomer, PosProduct, SaleSummary } from '~/types/pos'
 import {
   normalizeCashSession,
   normalizeSaleSummary,
+  unwrapCashRegisters,
   unwrapCustomers,
   unwrapPaymentMethods,
   unwrapProducts,
@@ -72,10 +73,12 @@ function unwrapRecord(payload: unknown, key: string) {
 export const usePosStore = defineStore('pos', () => {
   const api = useApi()
   const context = useBusinessContextStore()
+  const auth = useAuthStore()
 
   const products = ref<PosProduct[]>([])
   const customers = ref<PosCustomer[]>([])
   const paymentMethods = ref<PaymentMethodOption[]>([])
+  const cashRegisters = ref<CashRegister[]>([])
   const sales = ref<SaleSummary[]>([])
   const activeSession = ref<CashSession | null>(null)
   const cashRegisterId = ref<number | ''>(1)
@@ -123,6 +126,17 @@ export const usePosStore = defineStore('pos', () => {
       && hasValidPayments.value
       && paidTotal.value >= total.value
   })
+  const selectedCashRegister = computed(() => {
+    return cashRegisters.value.find((register) => register.id === Number(cashRegisterId.value)) ?? null
+  })
+  const availableCashRegisters = computed(() => {
+    return cashRegisters.value.filter((register) => {
+      return register.status === 'available'
+        || register.status === 'in_use'
+        || register.currentCashSessionId
+        || register.id === Number(cashRegisterId.value)
+    })
+  })
 
   function persistSession() {
     if (!import.meta.client) return
@@ -156,6 +170,17 @@ export const usePosStore = defineStore('pos', () => {
     }
   }
 
+  function ensureCashRegisterSelection() {
+    const exists = cashRegisters.value.some((register) => register.id === Number(cashRegisterId.value))
+    if (!exists) {
+      const preferred = cashRegisters.value.find((register) => register.status === 'available')
+        ?? cashRegisters.value.find((register) => register.status === 'in_use')
+        ?? cashRegisters.value[0]
+      cashRegisterId.value = preferred?.id ?? ''
+    }
+    persistSession()
+  }
+
   function clearMessages() {
     error.value = ''
     success.value = ''
@@ -168,18 +193,25 @@ export const usePosStore = defineStore('pos', () => {
     try {
       if (!context.loaded) await context.loadContext()
 
-      const [productsResponse, customersResponse, paymentMethodsResponse, salesResponse] = await Promise.all([
+      const registerQuery: Record<string, string | number> = { limit: 100 }
+      if (context.selectedBranchId) registerQuery.branch_id = context.selectedBranchId
+
+      const [productsResponse, customersResponse, paymentMethodsResponse, cashRegistersResponse, salesResponse] = await Promise.all([
         api.get<unknown>('/products', { query: { limit: 300, active: true } }),
         api.get<unknown>('/customers', { query: { limit: 300, active: true } }),
         api.get<unknown>('/payment_methods', { query: { limit: 100, active: true } }),
+        auth.can('cash_registers.read') ? api.get<unknown>('/cash_registers', { query: registerQuery }) : Promise.resolve({ cash_registers: [] }),
         api.get<unknown>('/sales', { query: { limit: 20 } }),
       ])
 
       products.value = unwrapProducts(productsResponse).filter((product) => product.active)
       customers.value = unwrapCustomers(customersResponse)
       paymentMethods.value = unwrapPaymentMethods(paymentMethodsResponse).filter((method) => method.active)
+      cashRegisters.value = unwrapCashRegisters(cashRegistersResponse)
       sales.value = unwrapSales(salesResponse)
 
+      if (cashRegisters.value.length > 0) ensureCashRegisterSelection()
+      await loadCurrentCashSession()
       ensurePaymentRows()
     }
     catch (loadError) {
@@ -193,6 +225,31 @@ export const usePosStore = defineStore('pos', () => {
   async function refreshSales() {
     const response = await api.get<unknown>('/sales', { query: { limit: 20 } })
     sales.value = unwrapSales(response)
+  }
+
+  async function loadCurrentCashSession() {
+    if (!cashRegisterId.value) {
+      activeSession.value = null
+      persistSession()
+      return null
+    }
+
+    const response = await api.get<unknown>('/cash_sessions/current', {
+      query: { cash_register_id: Number(cashRegisterId.value) },
+    })
+    const normalized = normalizeCashSession(unwrapRecord(response, 'cash_session'))
+
+    activeSession.value = normalized?.status === 'open' ? normalized : null
+    persistSession()
+
+    return activeSession.value
+  }
+
+  async function selectCashRegister(registerId: number | '') {
+    cashRegisterId.value = registerId
+    activeSession.value = null
+    persistSession()
+    if (registerId) await loadCurrentCashSession()
   }
 
   async function openCashSession(openingAmount: string | number) {
@@ -212,6 +269,7 @@ export const usePosStore = defineStore('pos', () => {
       activeSession.value = normalized
       cashRegisterId.value = normalized.cashRegisterId
       persistSession()
+      await loadCashRegisters()
       success.value = 'Caja abierta correctamente.'
     }
     catch (openError) {
@@ -239,6 +297,7 @@ export const usePosStore = defineStore('pos', () => {
       persistSession()
       activeSession.value = null
       persistSession()
+      await loadCashRegisters()
       success.value = 'Caja cerrada correctamente.'
     }
     catch (closeError) {
@@ -456,10 +515,20 @@ export const usePosStore = defineStore('pos', () => {
     }
   }
 
+  async function loadCashRegisters() {
+    if (!auth.can('cash_registers.read')) return
+    const query: Record<string, string | number> = { limit: 100 }
+    if (context.selectedBranchId) query.branch_id = context.selectedBranchId
+    const response = await api.get<unknown>('/cash_registers', { query })
+    cashRegisters.value = unwrapCashRegisters(response)
+    ensureCashRegisterSelection()
+  }
+
   return {
     products,
     customers,
     paymentMethods,
+    cashRegisters,
     sales,
     activeSession,
     cashRegisterId,
@@ -478,9 +547,14 @@ export const usePosStore = defineStore('pos', () => {
     balance,
     change,
     canCheckout,
+    selectedCashRegister,
+    availableCashRegisters,
     restoreSession,
     loadReferenceData,
     refreshSales,
+    loadCashRegisters,
+    loadCurrentCashSession,
+    selectCashRegister,
     openCashSession,
     closeCashSession,
     addProduct,

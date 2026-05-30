@@ -242,12 +242,14 @@ function badgeText(value: unknown) {
   if (typeof value === 'boolean') return value ? 'Activo' : 'Inactivo'
   if (value === 'active') return 'Activo'
   if (value === 'inactive') return 'Inactivo'
+  if (value === 'available') return 'Disponible'
+  if (value === 'in_use') return 'En uso'
 
   return String(value ?? 'No definido')
 }
 
 function isActiveValue(value: unknown) {
-  return value === true || value === 'active'
+  return value === true || value === 'active' || value === 'available'
 }
 
 onMounted(() => {

@@ -30,14 +30,34 @@ export type PaymentMethodOption = {
   active: boolean
 }
 
+export type CashRegister = {
+  id: number
+  branchId: number
+  branchName?: string
+  code: string
+  name: string
+  status: string
+  currentCashSessionId?: number
+}
+
+export type CashSessionPaymentSummary = {
+  method: string
+  amount: number
+  paymentsCount: number
+}
+
 export type CashSession = {
   id: number
   cashRegisterId: number
+  cashRegisterName?: string
+  branchId?: number
+  branchName?: string
   userId?: number
   openingAmount: number
   closingAmount?: number
   expectedAmount?: number
   differenceAmount?: number
+  paymentSummary: CashSessionPaymentSummary[]
   status: string
   openedAt?: string
   closedAt?: string
@@ -129,6 +149,37 @@ export function normalizePaymentMethod(value: unknown): PaymentMethodOption | nu
   }
 }
 
+export function normalizeCashRegister(value: unknown): CashRegister | null {
+  if (!isRecord(value)) return null
+  const id = toNumber(value.id)
+  const branchId = toNumber(value.branch_id)
+  const code = stringValue(value.code)
+  const name = stringValue(value.name)
+  if (!id || !branchId || !code || !name) return null
+
+  return {
+    id,
+    branchId,
+    branchName: stringValue(value.branch_name),
+    code,
+    name,
+    status: stringValue(value.status) ?? 'available',
+    currentCashSessionId: toNumber(value.current_cash_session_id),
+  }
+}
+
+function normalizePaymentSummary(value: unknown): CashSessionPaymentSummary[] {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .filter(isRecord)
+    .map((item) => ({
+      method: stringValue(item.method) ?? 'SIN_METODO',
+      amount: numberValue(item.amount),
+      paymentsCount: numberValue(item.payments_count),
+    }))
+}
+
 export function normalizeCashSession(value: unknown): CashSession | null {
   if (!isRecord(value)) return null
   const id = toNumber(value.id)
@@ -138,11 +189,15 @@ export function normalizeCashSession(value: unknown): CashSession | null {
   return {
     id,
     cashRegisterId,
+    cashRegisterName: stringValue(value.cash_register_name),
+    branchId: toNumber(value.branch_id),
+    branchName: stringValue(value.branch_name),
     userId: toNumber(value.user_id),
     openingAmount: numberValue(value.opening_amount),
     closingAmount: toNumber(value.closing_amount),
     expectedAmount: toNumber(value.expected_amount),
     differenceAmount: toNumber(value.difference_amount),
+    paymentSummary: normalizePaymentSummary(value.payment_summary),
     status: stringValue(value.status) ?? 'open',
     openedAt: stringValue(value.opened_at),
     closedAt: stringValue(value.closed_at),
@@ -199,6 +254,12 @@ export function unwrapPaymentMethods(payload: unknown) {
   return unwrapCollection<unknown>(payload, 'payment_methods')
     .map(normalizePaymentMethod)
     .filter((item): item is PaymentMethodOption => Boolean(item))
+}
+
+export function unwrapCashRegisters(payload: unknown) {
+  return unwrapCollection<unknown>(payload, 'cash_registers')
+    .map(normalizeCashRegister)
+    .filter((item): item is CashRegister => Boolean(item))
 }
 
 export function unwrapSales(payload: unknown) {
