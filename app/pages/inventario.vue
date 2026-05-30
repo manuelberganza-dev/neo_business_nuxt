@@ -223,10 +223,10 @@ onMounted(async () => {
       <BaseMetricCard title="Bajo minimo" :value="String(inventory.lowStockItems.length)" helper="Requieren revision" tone="rose" :icon="Bell" />
     </div>
 
-    <div v-if="inventory.error" class="rounded-md border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+    <div v-if="inventory.error" role="alert" class="rounded-md border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
       {{ inventory.error }}
     </div>
-    <div v-if="inventory.success" class="rounded-md border border-success/20 bg-success/8 px-4 py-3 text-sm text-success">
+    <div v-if="inventory.success" role="status" aria-live="polite" class="rounded-md border border-success/20 bg-success/8 px-4 py-3 text-sm text-success">
       {{ inventory.success }}
     </div>
 
@@ -265,12 +265,12 @@ onMounted(async () => {
         <table class="min-w-full divide-y text-sm">
           <thead class="bg-muted/45 text-left text-xs font-semibold uppercase text-muted-foreground">
             <tr>
-              <th class="px-4 py-3">Producto</th>
-              <th class="px-4 py-3">SKU</th>
-              <th class="px-4 py-3">Bodega</th>
-              <th class="px-4 py-3 text-right">Cantidad</th>
-              <th class="px-4 py-3 text-right">Minimo</th>
-              <th class="px-4 py-3">Estado</th>
+              <th scope="col" class="px-4 py-3">Producto</th>
+              <th scope="col" class="px-4 py-3">SKU</th>
+              <th scope="col" class="px-4 py-3">Bodega</th>
+              <th scope="col" class="px-4 py-3 text-right">Cantidad</th>
+              <th scope="col" class="px-4 py-3 text-right">Minimo</th>
+              <th scope="col" class="px-4 py-3">Estado</th>
             </tr>
           </thead>
           <tbody class="divide-y">
@@ -301,11 +301,11 @@ onMounted(async () => {
         <table class="min-w-full divide-y text-sm">
           <thead class="bg-muted/45 text-left text-xs font-semibold uppercase text-muted-foreground">
             <tr>
-              <th class="px-4 py-3">Producto</th>
-              <th class="px-4 py-3">Bodega</th>
-              <th class="px-4 py-3 text-right">Existencia</th>
-              <th class="px-4 py-3">Minimo</th>
-              <th class="px-4 py-3 text-right">Accion</th>
+              <th scope="col" class="px-4 py-3">Producto</th>
+              <th scope="col" class="px-4 py-3">Bodega</th>
+              <th scope="col" class="px-4 py-3 text-right">Existencia</th>
+              <th scope="col" class="px-4 py-3">Minimo</th>
+              <th scope="col" class="px-4 py-3 text-right">Accion</th>
             </tr>
           </thead>
           <tbody class="divide-y">

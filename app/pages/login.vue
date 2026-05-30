@@ -10,6 +10,7 @@ const auth = useAuthStore()
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const sessionExpired = computed(() => route.query.reason === 'expired')
 
 async function handleSubmit() {
   errorMessage.value = ''
@@ -80,6 +81,9 @@ async function handleSubmit() {
           <h2 class="mt-4 text-2xl font-semibold tracking-normal">Iniciar sesion</h2>
           <p class="mt-2 text-sm leading-6 text-muted-foreground">
             Usa las credenciales asignadas a tu negocio.
+          </p>
+          <p v-if="sessionExpired" class="mt-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning" role="alert">
+            Tu sesion expiro. Inicia sesion de nuevo para continuar.
           </p>
         </div>
 

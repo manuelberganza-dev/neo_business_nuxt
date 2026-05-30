@@ -97,7 +97,7 @@ onMounted(async () => {
       </form>
     </UiCard>
 
-    <div v-if="reports.error" class="rounded-md border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+    <div v-if="reports.error" role="alert" class="rounded-md border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
       {{ reports.error }}
     </div>
 
@@ -217,11 +217,11 @@ onMounted(async () => {
           <table class="w-full min-w-[560px] text-sm">
             <thead class="bg-muted/70 text-left text-xs uppercase text-muted-foreground">
               <tr>
-                <th class="px-4 py-3 font-medium">#</th>
-                <th class="px-4 py-3 font-medium">Producto</th>
-                <th class="px-4 py-3 font-medium">SKU</th>
-                <th class="px-4 py-3 text-right font-medium">Unidades</th>
-                <th class="px-4 py-3 text-right font-medium">Total</th>
+                <th scope="col" class="px-4 py-3 font-medium">#</th>
+                <th scope="col" class="px-4 py-3 font-medium">Producto</th>
+                <th scope="col" class="px-4 py-3 font-medium">SKU</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Unidades</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Total</th>
               </tr>
             </thead>
             <tbody class="divide-y">
@@ -255,10 +255,10 @@ onMounted(async () => {
           <table class="w-full min-w-[420px] text-sm">
             <thead class="bg-muted/70 text-left text-xs uppercase text-muted-foreground">
               <tr>
-                <th class="px-4 py-3 font-medium">Cajero</th>
-                <th class="px-4 py-3 text-right font-medium">Ventas</th>
-                <th class="px-4 py-3 text-right font-medium">Total</th>
-                <th class="px-4 py-3 text-right font-medium">Participacion</th>
+                <th scope="col" class="px-4 py-3 font-medium">Cajero</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Ventas</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Total</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Participacion</th>
               </tr>
             </thead>
             <tbody class="divide-y">
@@ -305,10 +305,10 @@ onMounted(async () => {
           <table class="w-full min-w-[420px] text-sm">
             <thead class="bg-muted/70 text-left text-xs uppercase text-muted-foreground">
               <tr>
-                <th class="px-4 py-3 font-medium">Metodo</th>
-                <th class="px-4 py-3 text-right font-medium">Transacciones</th>
-                <th class="px-4 py-3 text-right font-medium">Monto</th>
-                <th class="px-4 py-3 text-right font-medium">Participacion</th>
+                <th scope="col" class="px-4 py-3 font-medium">Metodo</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Transacciones</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Monto</th>
+                <th scope="col" class="px-4 py-3 text-right font-medium">Participacion</th>
               </tr>
             </thead>
             <tbody class="divide-y">

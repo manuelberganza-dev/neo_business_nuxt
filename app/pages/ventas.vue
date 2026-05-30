@@ -121,10 +121,10 @@ onMounted(async () => {
       </form>
     </UiCard>
 
-    <div v-if="pos.error" class="rounded-md border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+    <div v-if="pos.error" role="alert" class="rounded-md border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
       {{ pos.error }}
     </div>
-    <div v-if="pos.success" class="rounded-md border border-success/25 bg-success/8 px-4 py-3 text-sm text-success">
+    <div v-if="pos.success" role="status" aria-live="polite" class="rounded-md border border-success/25 bg-success/8 px-4 py-3 text-sm text-success">
       {{ pos.success }}
     </div>
 
@@ -133,13 +133,13 @@ onMounted(async () => {
         <table class="w-full min-w-[780px] text-sm">
           <thead class="text-left text-xs text-muted-foreground">
             <tr class="border-b">
-              <th class="pb-2 font-medium">Venta</th>
-              <th class="pb-2 font-medium">Cliente</th>
-              <th class="pb-2 font-medium">Cajero</th>
-              <th class="pb-2 font-medium">Fecha</th>
-              <th class="pb-2 text-right font-medium">Total</th>
-              <th class="pb-2 text-right font-medium">Estado</th>
-              <th class="pb-2 text-right font-medium">Accion</th>
+              <th scope="col" class="pb-2 font-medium">Venta</th>
+              <th scope="col" class="pb-2 font-medium">Cliente</th>
+              <th scope="col" class="pb-2 font-medium">Cajero</th>
+              <th scope="col" class="pb-2 font-medium">Fecha</th>
+              <th scope="col" class="pb-2 text-right font-medium">Total</th>
+              <th scope="col" class="pb-2 text-right font-medium">Estado</th>
+              <th scope="col" class="pb-2 text-right font-medium">Accion</th>
             </tr>
           </thead>
           <tbody>

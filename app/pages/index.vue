@@ -178,16 +178,18 @@ onMounted(async () => {
       <UiCard class="overflow-hidden">
         <div class="flex items-center justify-between p-5">
           <h2 class="text-base font-semibold">Productos bajo minimo</h2>
-          <UiButton variant="ghost" size="sm">Ver todos</UiButton>
+          <NuxtLink to="/inventario">
+            <UiButton variant="ghost" size="sm">Ver todos</UiButton>
+          </NuxtLink>
         </div>
         <div class="overflow-x-auto">
           <table v-if="dashboard.lowStockProducts.length" class="w-full min-w-[560px] text-sm">
             <thead class="bg-muted/70 text-left text-xs uppercase text-muted-foreground">
               <tr>
-                <th class="px-5 py-3 font-medium">Producto</th>
-                <th class="px-5 py-3 font-medium">Bodega</th>
-                <th class="px-5 py-3 font-medium">Actual</th>
-                <th class="px-5 py-3 font-medium">Minimo</th>
+                <th scope="col" class="px-5 py-3 font-medium">Producto</th>
+                <th scope="col" class="px-5 py-3 font-medium">Bodega</th>
+                <th scope="col" class="px-5 py-3 font-medium">Actual</th>
+                <th scope="col" class="px-5 py-3 font-medium">Minimo</th>
               </tr>
             </thead>
             <tbody class="divide-y">
@@ -208,17 +210,19 @@ onMounted(async () => {
       <UiCard class="overflow-hidden">
         <div class="flex items-center justify-between p-5">
           <h2 class="text-base font-semibold">Ultimas ventas</h2>
-          <UiButton variant="ghost" size="sm">Ver todas</UiButton>
+          <NuxtLink to="/ventas">
+            <UiButton variant="ghost" size="sm">Ver todas</UiButton>
+          </NuxtLink>
         </div>
         <div class="overflow-x-auto">
           <table v-if="dashboard.latestSales.length" class="w-full min-w-[580px] text-sm">
             <thead class="bg-muted/70 text-left text-xs uppercase text-muted-foreground">
               <tr>
-                <th class="px-5 py-3 font-medium">Venta</th>
-                <th class="px-5 py-3 font-medium">Hora</th>
-                <th class="px-5 py-3 font-medium">Cajero</th>
-                <th class="px-5 py-3 font-medium">Total</th>
-                <th class="px-5 py-3 font-medium">Metodo</th>
+                <th scope="col" class="px-5 py-3 font-medium">Venta</th>
+                <th scope="col" class="px-5 py-3 font-medium">Hora</th>
+                <th scope="col" class="px-5 py-3 font-medium">Cajero</th>
+                <th scope="col" class="px-5 py-3 font-medium">Total</th>
+                <th scope="col" class="px-5 py-3 font-medium">Metodo</th>
               </tr>
             </thead>
             <tbody class="divide-y">
@@ -261,27 +265,37 @@ onMounted(async () => {
       </UiCard>
     </section>
 
-    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      <UiButton variant="outline" class="h-16 justify-start bg-card">
-        <ShoppingCart class="size-5 text-primary" aria-hidden="true" />
-        Nueva venta
-      </UiButton>
-      <UiButton variant="outline" class="h-16 justify-start bg-card">
-        <ClipboardCheck class="size-5 text-warning" aria-hidden="true" />
-        Registrar compra
-      </UiButton>
-      <UiButton variant="outline" class="h-16 justify-start bg-card">
-        <Boxes class="size-5 text-destructive" aria-hidden="true" />
-        Ajuste de inventario
-      </UiButton>
-      <UiButton variant="outline" class="h-16 justify-start bg-card">
-        <ArrowUpRight class="size-5 text-primary" aria-hidden="true" />
-        Transferir productos
-      </UiButton>
-      <UiButton variant="outline" class="h-16 justify-start bg-card">
-        <Banknote class="size-5 text-success" aria-hidden="true" />
-        Ver reportes
-      </UiButton>
+    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Acciones rapidas">
+      <NuxtLink to="/pos">
+        <UiButton variant="outline" class="h-16 w-full justify-start bg-card">
+          <ShoppingCart class="size-5 text-primary" aria-hidden="true" />
+          Nueva venta
+        </UiButton>
+      </NuxtLink>
+      <NuxtLink to="/compras">
+        <UiButton variant="outline" class="h-16 w-full justify-start bg-card">
+          <ClipboardCheck class="size-5 text-warning" aria-hidden="true" />
+          Registrar compra
+        </UiButton>
+      </NuxtLink>
+      <NuxtLink to="/inventario">
+        <UiButton variant="outline" class="h-16 w-full justify-start bg-card">
+          <Boxes class="size-5 text-destructive" aria-hidden="true" />
+          Ajuste de inventario
+        </UiButton>
+      </NuxtLink>
+      <NuxtLink to="/inventario">
+        <UiButton variant="outline" class="h-16 w-full justify-start bg-card">
+          <ArrowUpRight class="size-5 text-primary" aria-hidden="true" />
+          Transferir productos
+        </UiButton>
+      </NuxtLink>
+      <NuxtLink to="/reportes">
+        <UiButton variant="outline" class="h-16 w-full justify-start bg-card">
+          <Banknote class="size-5 text-success" aria-hidden="true" />
+          Ver reportes
+        </UiButton>
+      </NuxtLink>
     </section>
   </div>
 </template>

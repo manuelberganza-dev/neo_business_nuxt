@@ -87,10 +87,10 @@ onMounted(refresh)
       </UiButton>
     </div>
 
-    <div v-if="purchases.error" class="rounded-md border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+    <div v-if="purchases.error" role="alert" class="rounded-md border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
       {{ purchases.error }}
     </div>
-    <div v-if="purchases.success" class="rounded-md border border-success/25 bg-success/8 px-4 py-3 text-sm text-success">
+    <div v-if="purchases.success" role="status" aria-live="polite" class="rounded-md border border-success/25 bg-success/8 px-4 py-3 text-sm text-success">
       {{ purchases.success }}
     </div>
 
@@ -129,13 +129,13 @@ onMounted(refresh)
             <table class="w-full min-w-[820px] text-sm">
               <thead class="bg-muted/70 text-left text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th class="px-4 py-3 font-medium">Documento</th>
-                  <th class="px-4 py-3 font-medium">Proveedor</th>
-                  <th class="px-4 py-3 font-medium">Bodega</th>
-                  <th class="px-4 py-3 font-medium">Fecha</th>
-                  <th class="px-4 py-3 text-right font-medium">Total</th>
-                  <th class="px-4 py-3 text-right font-medium">Estado</th>
-                  <th class="px-4 py-3 text-right font-medium">Accion</th>
+                  <th scope="col" class="px-4 py-3 font-medium">Documento</th>
+                  <th scope="col" class="px-4 py-3 font-medium">Proveedor</th>
+                  <th scope="col" class="px-4 py-3 font-medium">Bodega</th>
+                  <th scope="col" class="px-4 py-3 font-medium">Fecha</th>
+                  <th scope="col" class="px-4 py-3 text-right font-medium">Total</th>
+                  <th scope="col" class="px-4 py-3 text-right font-medium">Estado</th>
+                  <th scope="col" class="px-4 py-3 text-right font-medium">Accion</th>
                 </tr>
               </thead>
               <tbody class="divide-y">
